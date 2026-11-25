@@ -1,27 +1,33 @@
-#!/usr/bin/env python3
-"""World News — Wednesday 25 November 2026 (make.fun news-image-20261125).
+"""Copy the newspaper image into the output folder.
 
-The simplest entry the brief allows: copy the image this repository
-holds (entry.png, 1024x1024 PNG, under 1 MiB) to /output/entry.png.
+This entry ships the finished image as ``entry.png`` next to this script.
+All this program does is place an exact copy of that file at
+``/output/entry.png``, which is where the competition expects it.
 
-No network, no randomness, no dependencies beyond the standard library.
-Two runs write the same bytes, because the copy is byte-for-byte.
+The copy is byte for byte, uses only the standard library, and touches
+no network, so running it twice always produces identical output.
 """
+
+import os
 import shutil
 import sys
 from pathlib import Path
 
-HERE = Path(__file__).resolve().parent
-SOURCE = HERE / "entry.png"
-DEFAULT_OUTPUT = Path("/output/entry.png")
+SOURCE = Path(__file__).resolve().parent / "entry.png"
+OUTPUT_DIR = Path(os.environ.get("MAKEFUN_OUTPUT_DIR", "/output"))
+DESTINATION = OUTPUT_DIR / "entry.png"
 
 
-def main(argv=None):
-    argv = list(sys.argv[1:] if argv is None else argv)
-    output = Path(argv[0]) if argv else DEFAULT_OUTPUT
-    output.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(SOURCE, output)
-    print(f"Wrote {output} ({output.stat().st_size} bytes)")
+def main() -> int:
+    if not SOURCE.is_file():
+        print(f"missing source image: {SOURCE}", file=sys.stderr)
+        return 1
+    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(SOURCE, DESTINATION)
+    if DESTINATION.stat().st_size != SOURCE.stat().st_size:
+        print("copy incomplete: size mismatch", file=sys.stderr)
+        return 1
+    print(f"wrote {DESTINATION} ({DESTINATION.stat().st_size} bytes)")
     return 0
 
 
